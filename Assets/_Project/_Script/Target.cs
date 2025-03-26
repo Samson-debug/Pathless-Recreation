@@ -7,7 +7,7 @@ namespace Pathless_Recreation
     {
         private Transform player;
 
-        bool isAvailable = true;
+        public bool isAvailable = true;
         bool isReachable = false;
         Vector3 targetDirection;
 
@@ -38,15 +38,29 @@ namespace Pathless_Recreation
             {
                 //Debug.Log($"{gameObject.name} is out of reach");
                 isReachable = false;
-                if (TargetSystem.reachableTargets.Contains(this))
-                    TargetSystem.reachableTargets.Remove(this);
+                TargetSystem.targets.Remove(this);
+                if (TargetSystem.instance.currentTarget == this)
+                    TargetSystem.instance.StopTargetFocus();
             }
         }
 
         private void OnBecameVisible()
         {
+            isAvailable = true;
             if (!TargetSystem.targets.Contains(this))
                 TargetSystem.targets.Add(this);
+        }
+
+        private void OnBecameInvisible()
+        {
+            isAvailable = false;
+            TargetSystem.targets.Remove(this);
+            TargetSystem.reachableTargets.Remove(this);
+
+            if (TargetSystem.instance.currentTarget == this)
+            {
+                TargetSystem.instance.StopTargetFocus();
+            }
         }
 
         private void FixedUpdate()

@@ -32,7 +32,7 @@ namespace Pathless_Recreation
         private bool isRunning;
         private bool holdingJumpKey;
 
-        PlayerInput input;
+        public PlayerInput input;
         Animator animator;
         CharacterController controller;
 

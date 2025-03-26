@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Pathless_Recreation
 {
     public class TargetSystem : MonoBehaviour
     {
+        public bool debugText;
+        
         public static TargetSystem instance;
         public static List<ArrowTarget> targets = new List<ArrowTarget>();
         public static List<ArrowTarget> reachableTargets = new List<ArrowTarget>();
@@ -23,18 +26,23 @@ namespace Pathless_Recreation
         [SerializeField] float positionDistanceWeight = 8;
         public float maxReachDistance = 70;
 
-        public ArrowTarget currentTarget, storedTarget;
+        public ArrowTarget currentTarget;
+        private ArrowTarget tempTarget;
+        
+        ArrowSystem arrowSystem;
         Camera cam;
 
         private void Awake()
         {
             if (instance == null)
                 instance = this;
+            
+            arrowSystem = GetComponent<ArrowSystem>();
 
             cam = Camera.main;
         }
 
-        private void FixedUpdate()
+        private void Update()
         {
             SetTargetFocus();
             CheckTargetFocusChange();
@@ -47,18 +55,21 @@ namespace Pathless_Recreation
                     Mathf.Clamp(115 - (distanceFromTarget - rectSizeMultiplier), 50, 200),
                     Mathf.Clamp(115 - (distanceFromTarget - rectSizeMultiplier), 50, 200)
                 );
-                Debug.Log($"targetPos :{currentTarget.transform.position} && transform Pos :{transform.position}");
-                Debug.Log($"Distance : {distanceFromTarget}");
-                Debug.Log($"Delta Size : {Mathf.Clamp(115 - (distanceFromTarget - rectSizeMultiplier), 50, 200)}");
+                if(debugText){
+                    Debug.Log($"Distance : {distanceFromTarget}");
+                    Debug.Log($"targetPos :{currentTarget.transform.position} && transform Pos :{transform.position}");
+                    Debug.Log($"Delta Size : {Mathf.Clamp(115 - (distanceFromTarget - rectSizeMultiplier), 50, 200)}");
+                }
             }
         }
 
         private void SetTargetFocus()
         {
-            if (storedTarget != currentTarget)
+            tempTarget = arrowSystem.isCharging ? currentTarget : tempTarget;
+            if (currentTarget != tempTarget)
             {
+                currentTarget = tempTarget;
                 targetFocusSprite.gameObject.SetActive(currentTarget != null);
-                storedTarget = currentTarget;
                 targetFocusSprite.DOComplete();
                 targetFocusSprite.DOScale(4, 0.5f).From();
             }
@@ -67,7 +78,7 @@ namespace Pathless_Recreation
         private void CheckTargetFocusChange()
         {
             int targetIndex = TargetIndex();
-            currentTarget = targetIndex < 0 ? null : reachableTargets[targetIndex];
+            tempTarget = targetIndex < 0 ? null : reachableTargets[targetIndex];
 
             /*if (currentTarget != null)
                 print($"Current target: {currentTarget.gameObject.name} && with index: {targetIndex}");
@@ -135,5 +146,11 @@ namespace Pathless_Recreation
             
         }
         private Vector3 WorldToScreenPoint(Vector3 worldPos) => cam.WorldToScreenPoint(worldPos);
+
+        public void StopTargetFocus()
+        {
+            arrowSystem.CancelFire(false);
+            currentTarget = null;
+        }
     }
 }
