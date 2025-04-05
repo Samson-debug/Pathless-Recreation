@@ -11,10 +11,19 @@ namespace Pathless_Recreation
 {
     public class ArrowSystem : MonoBehaviour
     {
+        //Events
+        public Action OnInputStart;
+        public Action OnInputRelease;
+        public Action<float> OnArrowRelease;
+        public Action OnTargetHit;
+        public Action OnTargetLost;
+        
         public ParticleSystem wrongArrowParticle;
         public ParticleSystem correctArrowParticle;
         public Slider arrowChargeSlider;
+        public ParticleSystem StaminaParticle;
         
+        public float slowDownInterval = 0.5f;
         public float systemCooldownTime = 1f;
         public float chargeTime = 1f;
         public float assistTimePercent = 0.1f;
@@ -59,6 +68,8 @@ namespace Pathless_Recreation
             if (!isActive) return;
             if (targetSystem.currentTarget == null || !targetSystem.currentTarget.isAvailable) return;
 
+            OnInputStart?.Invoke();
+            
             isCharging = true;
             DOVirtual.Float(0, 1, chargeTime, SetChargeAmount).SetId(0);
         }
@@ -74,10 +85,13 @@ namespace Pathless_Recreation
             if (shootArrow){
                 if(!isCharging) return;
                 if(targetSystem.currentTarget == null || !targetSystem.currentTarget.isAvailable) return;
-
+                
+                OnInputRelease?.Invoke();
                 CheckArrowRelease();
                 
             }
+            
+            OnTargetLost?.Invoke();
             
             isCharging = false;
             DOTween.Kill(0);
@@ -88,12 +102,31 @@ namespace Pathless_Recreation
         {
             DisableSystemForPeriod();
 
+            if (HalfTime())
+                chargeAmount = 0.5f;
+            else if(FullTime())
+                chargeAmount = 1f;
+            
+            OnArrowRelease?.Invoke(chargeAmount);
+            
             if (HalfTime() || FullTime()){
+
+                if (HalfTime())
+                    StartCoroutine(SlowTime());
                 ShootCorrectArrow();
             }
             else{
                 ShootWrongArrow();
             }
+        }
+
+        private IEnumerator SlowTime()
+        {
+            float scale = 0.2f;
+            Time.timeScale = scale;
+            
+            yield return new WaitForSecondsRealtime(slowDownInterval * scale);
+            Time.timeScale = 1f;
         }
 
         private bool HalfTime() => chargeAmount >= .5f - assistTimePercent && chargeAmount <= .5f + assistTimePercent;
@@ -105,7 +138,7 @@ namespace Pathless_Recreation
             wrongArrowParticle.transform.position = transform.position + Vector3.up * 0.7f;
             wrongArrowParticle.transform.LookAt(lockedTarget.transform.position);
             wrongArrowParticle.Play();
-            print($"wrong arrow");
+            //print($"wrong arrow");
         }
 
         private void ShootCorrectArrow()
@@ -116,7 +149,7 @@ namespace Pathless_Recreation
             shape.position = correctArrowParticle.transform.InverseTransformPoint(transform.position);
             correctArrowParticle.Play();
             
-            print($"correct arrow");
+            //print($"correct arrow");
         }
 
         private void DisableSystemForPeriod()
@@ -131,6 +164,19 @@ namespace Pathless_Recreation
                 yield return new WaitForSeconds(systemCooldownTime);
                 isActive = true;
             }
+        }
+
+        public void TargetHit(Vector3 arrowDir)
+        {
+            OnTargetHit?.Invoke();
+            
+            isActive = true;
+            lockedTarget.DisableTarget(arrowDir);
+            
+            //Release stamina part
+            var shape = StaminaParticle.shape;
+            shape.position = transform.InverseTransformPoint(lockedTarget.transform.position);
+            StaminaParticle.Play();
         }
     }
 }

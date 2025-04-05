@@ -15,19 +15,23 @@ namespace Pathless_Recreation
         public static List<ArrowTarget> targets = new List<ArrowTarget>();
         public static List<ArrowTarget> reachableTargets = new List<ArrowTarget>();
 
-        [Header("Visual Elements")] public RectTransform targetFocusSprite;
+        [Header("Visual Elements")] 
+        public RectTransform targetFocusSlider;
+        public CloneTargetSlider cloneTargetSlider;
         public float rectSizeMultiplier = 2f;
 
         [Header("Parameters")]
         //Weight values that determine what distance (screen/player) gets prioritized
-        [SerializeField]
-        float screenDistanceWeight = 1;
-
+        [SerializeField] float screenDistanceWeight = 1;
         [SerializeField] float positionDistanceWeight = 8;
         public float maxReachDistance = 70;
+        
+        [Header("Controls")]
+        public float disableCooldownTime = 2f;
 
         public ArrowTarget currentTarget;
         private ArrowTarget tempTarget;
+        private Transform cachedTarget;
         
         ArrowSystem arrowSystem;
         Camera cam;
@@ -36,10 +40,12 @@ namespace Pathless_Recreation
         {
             if (instance == null)
                 instance = this;
-            
-            arrowSystem = GetComponent<ArrowSystem>();
 
             cam = Camera.main;
+            
+            arrowSystem = GetComponent<ArrowSystem>();
+            arrowSystem.OnInputStart += UpdateCacheTarget;
+            arrowSystem.OnArrowRelease += CloneTargetSlider;
         }
 
         private void Update()
@@ -49,9 +55,9 @@ namespace Pathless_Recreation
 
             if (currentTarget != null)
             {
-                targetFocusSprite.position = WorldToScreenPoint(currentTarget.transform.position);
+                targetFocusSlider.position = WorldToScreenPoint(currentTarget.transform.position);
                 float distanceFromTarget = Vector3.Distance(currentTarget.transform.position, transform.position);
-                targetFocusSprite.sizeDelta = new Vector2(
+                targetFocusSlider.sizeDelta = new Vector2(
                     Mathf.Clamp(115 - (distanceFromTarget - rectSizeMultiplier), 50, 200),
                     Mathf.Clamp(115 - (distanceFromTarget - rectSizeMultiplier), 50, 200)
                 );
@@ -69,9 +75,9 @@ namespace Pathless_Recreation
             if (currentTarget != tempTarget)
             {
                 currentTarget = tempTarget;
-                targetFocusSprite.gameObject.SetActive(currentTarget != null);
-                targetFocusSprite.DOComplete();
-                targetFocusSprite.DOScale(4, 0.5f).From();
+                targetFocusSlider.gameObject.SetActive(currentTarget != null);
+                targetFocusSlider.DOComplete();
+                targetFocusSlider.DOScale(4, 0.5f).From();
             }
         }
 
@@ -145,12 +151,23 @@ namespace Pathless_Recreation
             return clampedPosition;
             
         }
+
         private Vector3 WorldToScreenPoint(Vector3 worldPos) => cam.WorldToScreenPoint(worldPos);
 
         public void StopTargetFocus()
         {
             arrowSystem.CancelFire(false);
             currentTarget = null;
+        }
+
+        private void CloneTargetSlider(float chargerValue)
+        {
+            cloneTargetSlider.SetUp(cachedTarget, targetFocusSlider.sizeDelta, chargerValue);
+            cloneTargetSlider.gameObject.SetActive(true);
+        }
+        
+        private void UpdateCacheTarget(){
+            cachedTarget = currentTarget.transform;
         }
     }
 }

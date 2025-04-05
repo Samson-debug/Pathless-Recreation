@@ -28,9 +28,9 @@ namespace Pathless_Recreation
         private float verticalVelocity;
 
         //Input Containers
-        private Vector2 moveInput;
-        private bool isRunning;
+        public bool isRunning;
         private bool holdingJumpKey;
+        private Vector2 moveInput;
 
         public PlayerInput input;
         Animator animator;
