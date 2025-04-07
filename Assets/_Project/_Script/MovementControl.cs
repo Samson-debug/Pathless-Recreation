@@ -2,8 +2,6 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.LowLevel;
-using UnityEngine.Rendering.UI;
 using UnityEngine.Serialization;
 
 namespace Pathless_Recreation
@@ -120,16 +118,17 @@ namespace Pathless_Recreation
             if (inputSqrMagnitude > 0.1f)
             {
                 
-                animator.SetFloat("Velocity", inputSqrMagnitude * currentAcceleration, 0.1f, Time.deltaTime);
+                animator.SetFloat("InputMagnitude", inputSqrMagnitude * currentAcceleration, 0.1f, Time.deltaTime);
                 PlayerMoveAndRotate();
             }
             else
             {
-                animator.SetFloat("Velocity", currentAcceleration * inputSqrMagnitude, 0.1f, Time.deltaTime);
+                animator.SetFloat("InputMagnitude", currentAcceleration * inputSqrMagnitude, 0.1f, Time.deltaTime);
             }
 
             //Debug.Log($"isRunning: {isRunning}");
-            //Debug.Log($"Input Square Magnitude: {moveInput.sqrMagnitude} || current Acceleration: {currentAcceleration}");
+            Debug.Log($"Input Square Magnitude: {inputSqrMagnitude} || current Acceleration: {currentAcceleration}");
+            Debug.Log($"Velocity: {inputSqrMagnitude * currentAcceleration }");
         }
 
         private void PlayerMoveAndRotate()
@@ -212,7 +211,8 @@ namespace Pathless_Recreation
         {
             Vector3 origin = transform.position + transform.up * 0.05f;
             isGrounded = Physics.Raycast(origin, Vector3.down, 0.2f, groundLayerMask);
-            animator.SetBool("isGrounded", isGrounded);
+            animator.SetBool("IsGrounded", isGrounded);
+            animator.SetFloat("GroundedValue", isGrounded ? 0 : 1, .1f, Time.deltaTime);
         }
         
         #region Input Handler
@@ -222,6 +222,7 @@ namespace Pathless_Recreation
             isHoldingRunInput = true;
 
             isRunning = CanRun() && moveInput.magnitude > 0;
+            
         }
 
         private bool CanRun()

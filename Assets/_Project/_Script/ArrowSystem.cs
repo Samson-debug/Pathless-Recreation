@@ -32,8 +32,10 @@ namespace Pathless_Recreation
         TargetSystem targetSystem;
         ArrowTarget lockedTarget;
         MovementControl movementControl;
+        Animator anim;
 
         public bool isCharging = false;
+        public bool releaseCooldown;
         bool isActive = true;
         Coroutine arrowSystemCooldown;
 
@@ -42,6 +44,7 @@ namespace Pathless_Recreation
         {
             targetSystem = GetComponent<TargetSystem>();
             movementControl = GetComponent<MovementControl>();
+            anim = GetComponent<Animator>();
 
             movementControl.input.Player.Fire.performed += Fire_Start;
             movementControl.input.Player.Fire.canceled += Fire_Cancel;
@@ -62,6 +65,18 @@ namespace Pathless_Recreation
         }
 
         #endregion
+
+        private void Update()
+        {
+            UpdateAnimator();
+        }
+
+        private void UpdateAnimator()
+        {
+            anim.SetBool("IsCharging", isCharging);
+            anim.SetBool("ReleaseCooldown", releaseCooldown);
+            anim.SetBool("IsRunning", movementControl.isRunning);
+        }
 
         private void StartFire()
         {
@@ -161,7 +176,10 @@ namespace Pathless_Recreation
 
             IEnumerator SystemCooldown()
             {
+                releaseCooldown = true;
                 yield return new WaitForSeconds(systemCooldownTime);
+                releaseCooldown = false;
+                
                 isActive = true;
             }
         }
@@ -169,7 +187,8 @@ namespace Pathless_Recreation
         public void TargetHit(Vector3 arrowDir)
         {
             OnTargetHit?.Invoke();
-            
+
+            releaseCooldown = false;
             isActive = true;
             lockedTarget.DisableTarget(arrowDir);
             
