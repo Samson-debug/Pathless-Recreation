@@ -19,6 +19,7 @@ namespace Pathless_Recreation
         public RectTransform targetFocusSlider;
         public CloneTargetSlider cloneTargetSlider;
         public float rectSizeMultiplier = 2f;
+        [HideInInspector] public Vector3 lerpedTargetPos;
 
         [Header("Parameters")]
         //Weight values that determine what distance (screen/player) gets prioritized
@@ -66,6 +67,8 @@ namespace Pathless_Recreation
                     Debug.Log($"targetPos :{currentTarget.transform.position} && transform Pos :{transform.position}");
                     Debug.Log($"Delta Size : {Mathf.Clamp(115 - (distanceFromTarget - rectSizeMultiplier), 50, 200)}");
                 }
+                
+                lerpedTargetPos = targetFocusSlider.transform.position;
             }
         }
 
